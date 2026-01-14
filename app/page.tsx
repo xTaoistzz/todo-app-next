@@ -10,7 +10,7 @@ async function getStatus() {
     const host = h.get("host");
 
     const res = await fetch(
-      `http://localhost:3000${BASE_PATH}/api/status`,
+      `http://localhost:3000/api/status`,
       { cache: "no-store" }
     );
 

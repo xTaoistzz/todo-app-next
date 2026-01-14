@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-const BASE_PATH = "/app1";
-
 type Todo = {
   id: string; // unified for all DB
   title: string;
@@ -18,7 +16,7 @@ export default function TodosPage() {
   const [editingTitle, setEditingTitle] = useState("");
 
   const loadTodos = async () => {
-    const res = await fetch(`${BASE_PATH}/api/todos`);
+    const res = await fetch(`/api/todos`);
     const data = await res.json();
 
     // normalize id (_id -> id for Mongo)
@@ -33,7 +31,7 @@ export default function TodosPage() {
 
   const addTodo = async () => {
     if (!newTitle.trim()) return;
-    await fetch(`${BASE_PATH}/api/todos`, {
+    await fetch(`/api/todos`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: newTitle }),
@@ -43,7 +41,7 @@ export default function TodosPage() {
   };
 
   const toggleDone = async (todo: Todo) => {
-    await fetch(`${BASE_PATH}/api/todos/${todo.id}`, {
+    await fetch(`/api/todos/${todo.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ done: !todo.done }),
@@ -58,7 +56,7 @@ export default function TodosPage() {
 
   const saveEdit = async (id: string, done: boolean) => {
     if (!editingTitle.trim()) return;
-    await fetch(`${BASE_PATH}/api/todos/${id}`, {
+    await fetch(`/api/todos/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: editingTitle }),
@@ -74,7 +72,7 @@ export default function TodosPage() {
   };
 
   const deleteTodo = async (id: string) => {
-    await fetch(`${BASE_PATH}/api/todos/${id}`, { method: "DELETE" });
+    await fetch(`/api/todos/${id}`, { method: "DELETE" });
     loadTodos();
   };
 

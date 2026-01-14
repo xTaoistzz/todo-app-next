@@ -7,14 +7,14 @@ import type { NextConfig } from "next";
  * - app3 => /app3
  * - default => '' (root)
  */
-const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "/app1";
+// const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "/app1";
 
 const nextConfig: NextConfig = {
   // Enable standalone output - เหมาะกับ Docker / Infra
   output: "standalone",
 
   // ✅ Base Path (หัวใจของ subpath routing)
-  basePath: BASE_PATH,
+  // basePath: BASE_PATH,
 
   // Optimize images
   images: {
@@ -50,7 +50,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: `${BASE_PATH}/:all*(svg|jpg|png|webp|avif|gif)`,
+        source: `/:all*(svg|jpg|png|webp|avif|gif)`,
         headers: [
           {
             key: "Cache-Control",
@@ -59,7 +59,7 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: `${BASE_PATH}/_next/static/:path*`,
+        source: `/_next/static/:path*`,
         headers: [
           {
             key: "Cache-Control",
