@@ -9,6 +9,8 @@ type Todo = {
   done: boolean;
 };
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "/app1";
+
 export default function TodosPage() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTitle, setNewTitle] = useState("");
@@ -16,7 +18,7 @@ export default function TodosPage() {
   const [editingTitle, setEditingTitle] = useState("");
 
   const loadTodos = async () => {
-    const res = await fetch(`/api/todos`);
+    const res = await fetch(`${BASE_PATH}/api/todos`);
     const data = await res.json();
 
     // normalize id (_id -> id for Mongo)
@@ -31,7 +33,7 @@ export default function TodosPage() {
 
   const addTodo = async () => {
     if (!newTitle.trim()) return;
-    await fetch(`/api/todos`, {
+    await fetch(`${BASE_PATH}/api/todos`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: newTitle }),
@@ -41,7 +43,7 @@ export default function TodosPage() {
   };
 
   const toggleDone = async (todo: Todo) => {
-    await fetch(`/api/todos/${todo.id}`, {
+    await fetch(`${BASE_PATH}/api/todos/${todo.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ done: !todo.done }),
@@ -56,7 +58,7 @@ export default function TodosPage() {
 
   const saveEdit = async (id: string, done: boolean) => {
     if (!editingTitle.trim()) return;
-    await fetch(`/api/todos/${id}`, {
+    await fetch(`${BASE_PATH}/api/todos/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: editingTitle }),
@@ -72,7 +74,7 @@ export default function TodosPage() {
   };
 
   const deleteTodo = async (id: string) => {
-    await fetch(`/api/todos/${id}`, { method: "DELETE" });
+    await fetch(`${BASE_PATH}/api/todos/${id}`, { method: "DELETE" });
     loadTodos();
   };
 
