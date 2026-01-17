@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 
-const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "/app1";
+// const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "/app1";
 
 async function getStatus() {
   try {
@@ -11,7 +11,7 @@ async function getStatus() {
     const host = h.get("host"); // เช่น localhost
     const proto = h.get("x-forwarded-proto") ?? "http";
 
-    const url = `${BASE_PATH}/api/status`;
+    const url = `http://localhost:3000/api/status`;
 
     const res = await fetch(url, { cache: "no-store" });
 
@@ -50,7 +50,7 @@ export default async function Home() {
       <main className="flex-1 max-w-2xl mx-auto px-6 py-20 flex flex-col items-center gap-8 text-center">
 
         <h2 className="text-4xl font-bold text-slate-900">
-          Manage Your Tasks # This is Third Todo App
+          Manage Your Tasks
         </h2>
 
         <p className="text-slate-600 text-lg max-w-md leading-relaxed">
@@ -100,7 +100,7 @@ export default async function Home() {
       </main>
 
       <footer className="bg-white/80 backdrop-blur-sm w-full border-t border-slate-200 text-center py-5 text-slate-600 text-sm">
-        Built with Next.js & PostgresQL
+        Built with Next.js
       </footer>
     </div>
   );

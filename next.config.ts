@@ -1,12 +1,7 @@
 import type { NextConfig } from "next";
 
-const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "/app3";
-
 const nextConfig: NextConfig = {
   output: "standalone",
-
-  // ✅ เปิด basePath
-  basePath: BASE_PATH,
 
   images: {
     minimumCacheTTL: 60,
@@ -18,15 +13,18 @@ const nextConfig: NextConfig = {
   compress: true,
   productionBrowserSourceMaps: false,
 
+  /**
+   * ❗ ห้าม optimize DB packages
+   * เพราะมี side-effect และ native bindings
+   */
   experimental: {
-    optimizePackageImports: ["mongodb", "mysql2", "pg"],
+    optimizePackageImports: [],
   },
 
   compiler: {
     removeConsole: false,
   },
 
-  turbopack: {},
   poweredByHeader: false,
 
   async headers() {
@@ -41,7 +39,6 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // ⚠️ basePath จะถูก prepend ให้อัตโนมัติ
         source: `/_next/static/:path*`,
         headers: [
           {

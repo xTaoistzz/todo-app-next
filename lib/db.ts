@@ -1,15 +1,29 @@
 import mariadb, { RowDataPacket, ResultSetHeader } from "mysql2/promise";
-import { Pool as PostgresPool, QueryResultRow } from "pg";
+import { Pool as PostgresPool } from "pg";
 import { MongoClient, Collection, Document } from "mongodb";
 
-const DB_TYPE = process.env.DB_TYPE;
+/**
+ * ❗ ห้ามอ่าน ENV ตอน module load
+ * เพราะ Next.js จะ import ไฟล์นี้ตอน build
+ */
+function getDbType() {
+  return process.env.DB_TYPE;
+}
+
+/**
+ * build phase ของ Next.js (ตอน next build)
+ * ต้องห้ามทำ side-effect ใด ๆ
+ */
+function isBuildPhase() {
+  return process.env.NEXT_PHASE === "phase-production-build";
+}
 
 // ---------- Pools ----------
 let mariadbPool: mariadb.Pool | null = null;
 let pgPool: PostgresPool | null = null;
 let mongoClient: MongoClient | null = null;
 
-// กัน log ซ้ำตอน hot reload
+// กัน log ซ้ำ
 let hasLoggedStartup = false;
 
 // ---------- Utils ----------
@@ -19,8 +33,19 @@ function logDb(message: string, type: "info" | "ok" | "error" = "info") {
   console.log(`${color}[DB]\x1b[0m ${message}`);
 }
 
+function logOnce(message: string) {
+  if (!hasLoggedStartup) {
+    logDb(message);
+    hasLoggedStartup = true;
+  }
+}
+
 // ---------- Init ----------
 export async function initDb() {
+  if (isBuildPhase()) return;
+
+  const DB_TYPE = getDbType();
+
   try {
     if (DB_TYPE === "mariadb") {
       if (!mariadbPool) {
@@ -32,11 +57,9 @@ export async function initDb() {
           connectionLimit: 10,
         });
 
-        if (!hasLoggedStartup) {
-          logDb(
-            `MariaDB → ${process.env.MARIADB_USER}@${process.env.MARIADB_HOST}/${process.env.MARIADB_DATABASE}`
-          );
-        }
+        logOnce(
+          `MariaDB → ${process.env.MARIADB_USER}@${process.env.MARIADB_HOST}/${process.env.MARIADB_DATABASE}`
+        );
       }
     }
 
@@ -50,26 +73,24 @@ export async function initDb() {
           port: Number(process.env.POSTGRES_PORT) || 5432,
         });
 
-        if (!hasLoggedStartup) {
-          logDb(
-            `Postgres → ${process.env.POSTGRES_USER}@${process.env.POSTGRES_HOST}/${process.env.POSTGRES_DATABASE}`
-          );
-        }
+        logOnce(
+          `Postgres → ${process.env.POSTGRES_USER}@${process.env.POSTGRES_HOST}/${process.env.POSTGRES_DATABASE}`
+        );
       }
     }
 
     else if (DB_TYPE === "mongo") {
       if (!mongoClient) {
         mongoClient = new MongoClient(
-          `mongodb://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@${process.env.MONGO_HOST}:${process.env.MONGO_PORT}`
+          `mongodb://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}` +
+          `@${process.env.MONGO_HOST}:${process.env.MONGO_PORT}`
         );
+
         await mongoClient.connect();
 
-        if (!hasLoggedStartup) {
-          logDb(
-            `MongoDB → ${process.env.MONGO_HOST}/${process.env.MONGO_DATABASE}`
-          );
-        }
+        logOnce(
+          `MongoDB → ${process.env.MONGO_HOST}/${process.env.MONGO_DATABASE}`
+        );
       }
     }
 
@@ -77,12 +98,6 @@ export async function initDb() {
       throw new Error("Invalid DB_TYPE");
     }
 
-    // ---------- Ping ----------
-    if (!hasLoggedStartup) {
-      await dbPing();
-      logDb(`Connected (${DB_TYPE})`, "ok");
-      hasLoggedStartup = true;
-    }
   } catch (err: any) {
     logDb(`Connection failed (${DB_TYPE})`, "error");
     logDb(err.message, "error");
@@ -94,22 +109,24 @@ export async function initDb() {
 export async function query(
   sql: string,
   params: any[] = []
-): Promise<any[]> {  // เอา generic T ออก
+): Promise<any[]> {
+  const DB_TYPE = getDbType();
+
   if (DB_TYPE === "mariadb") {
     if (!mariadbPool) await initDb();
-    const [rows] = await mariadbPool!.query<RowDataPacket[] | ResultSetHeader[]>(sql, params);
+    const [rows] =
+      await mariadbPool!.query<RowDataPacket[] | ResultSetHeader[]>(sql, params);
     return rows as any[];
   }
 
   if (DB_TYPE === "postgres") {
     if (!pgPool) await initDb();
-    const res = await pgPool!.query(sql, params);  // ลบ <T>
-    return res.rows; // SELECT/RETURNING จะมี rows, UPDATE/DELETE ไม่มี rows → empty array ก็ได้
+    const res = await pgPool!.query(sql, params);
+    return res.rows;
   }
 
   throw new Error("Use mongoCollection for MongoDB");
 }
-
 
 // ---------- Mongo ----------
 export async function mongoCollection<T extends Document = Document>(
@@ -119,29 +136,34 @@ export async function mongoCollection<T extends Document = Document>(
   return mongoClient!.db(process.env.MONGO_DATABASE).collection<T>(name);
 }
 
-// ---------- Ping ----------
-async function dbPing() {
-  if (DB_TYPE === "mariadb") {
-    const conn = await mariadbPool!.getConnection();
-    await conn.ping();
-    conn.release();
-  }
-
-  if (DB_TYPE === "postgres") {
-    await pgPool!.query("SELECT 1");
-  }
-
-  if (DB_TYPE === "mongo") {
-    await mongoClient!.db().command({ ping: 1 });
-  }
-}
-
 // ---------- Status ----------
 export async function dbStatus() {
   try {
-    await dbPing();
+    if (isBuildPhase()) {
+      return { status: "build", database: getDbType() };
+    }
+
+    const DB_TYPE = getDbType();
+
+    if (DB_TYPE === "mariadb") {
+      if (!mariadbPool) await initDb();
+      const conn = await mariadbPool!.getConnection();
+      await conn.ping();
+      conn.release();
+    }
+
+    if (DB_TYPE === "postgres") {
+      if (!pgPool) await initDb();
+      await pgPool!.query("SELECT 1");
+    }
+
+    if (DB_TYPE === "mongo") {
+      if (!mongoClient) await initDb();
+      await mongoClient!.db().command({ ping: 1 });
+    }
+
     return { status: "connected", database: DB_TYPE };
   } catch {
-    return { status: "disconnected", database: DB_TYPE };
+    return { status: "disconnected", database: getDbType() };
   }
 }

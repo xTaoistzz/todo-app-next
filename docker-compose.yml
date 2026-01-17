@@ -1,15 +1,11 @@
 services:
-  # =========================
-  # app1 : MariaDB
-  # =========================
   app1:
-    image: todo-app:v1.0.0-mariadb
+    image: xtaoi/todo-app:v1.0.0-next
     container_name: app1
     ports:
       - "3001:3000"
     environment:
-      DB_TYPE: mariadb
-      NEXT_PUBLIC_BASE_PATH: /app1
+      DB_TYPE: postgres
 
       MARIADB_HOST: mariadb
       MARIADB_USER: todo
@@ -17,45 +13,11 @@ services:
       MARIADB_DATABASE: todo_app
       MARIADB_PORT: 3306
 
-      NODE_ENV: production
-    restart: unless-stopped
-    networks:
-      - todo-net
-
-  # =========================
-  # app2 : PostgreSQL
-  # =========================
-  app2:
-    image: todo-app:v1.0.0-postgres
-    container_name: app2
-    ports:
-      - "3002:3000"
-    environment:
-      DB_TYPE: postgres
-      NEXT_PUBLIC_BASE_PATH: /app2
-
       POSTGRES_HOST: postgres
       POSTGRES_USER: todo
       POSTGRES_PASSWORD: secret
       POSTGRES_DATABASE: todo_app
       POSTGRES_PORT: 5432
-
-      NODE_ENV: production
-    restart: unless-stopped
-    networks:
-      - todo-net
-
-  # =========================
-  # app3 : MongoDB
-  # =========================
-  app3:
-    image: todo-app:v1.0.0-mongodb
-    container_name: app3
-    ports:
-      - "3003:3000"
-    environment:
-      DB_TYPE: mongo
-      NEXT_PUBLIC_BASE_PATH: /app3
 
       MONGO_HOST: mongo
       MONGO_USER: todo
@@ -66,8 +28,54 @@ services:
       NODE_ENV: production
     restart: unless-stopped
     networks:
-      - todo-net
+      - database-net
+
+  # # =========================
+  # # app2 : PostgreSQL
+  # # =========================
+  # app2:
+  #   image: todo-app:v1.0.0-postgres
+  #   container_name: app2
+  #   ports:
+  #     - "3002:3000"
+  #   environment:
+  #     DB_TYPE: postgres
+  #     NEXT_PUBLIC_BASE_PATH: /app2
+
+  #     POSTGRES_HOST: postgres
+  #     POSTGRES_USER: todo
+  #     POSTGRES_PASSWORD: secret
+  #     POSTGRES_DATABASE: todo_app
+  #     POSTGRES_PORT: 5432
+
+  #     NODE_ENV: production
+  #   restart: unless-stopped
+  #   networks:
+  #     - todo-net
+
+  # # =========================
+  # # app3 : MongoDB
+  # # =========================
+  # app3:
+  #   image: todo-app:v1.0.0-mongodb
+  #   container_name: app3
+  #   ports:
+  #     - "3003:3000"
+  #   environment:
+  #     DB_TYPE: mongo
+  #     NEXT_PUBLIC_BASE_PATH: /app3
+
+  #     MONGO_HOST: mongo
+  #     MONGO_USER: todo
+  #     MONGO_PASSWORD: secret
+  #     MONGO_DATABASE: todo_app
+  #     MONGO_PORT: 27017
+
+  #     NODE_ENV: production
+  #   restart: unless-stopped
+  #   networks:
+  #     - todo-net
 
 networks:
-  todo-net:
+  database-net:
     external: true
